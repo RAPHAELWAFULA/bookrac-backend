@@ -12,7 +12,9 @@ exports.signup = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
     const newUser = await User.create({ name, email, password: hashedPassword });
 
-    res.status(201).json({ message: 'User created successfully' });
+    const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+
+    res.status(201).json({ message: 'User created successfully', token });
   } catch (err) {
     res.status(500).json({ message: 'Server error' });
   }
@@ -30,16 +32,21 @@ exports.signin = async (req, res) => {
 
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
-    res.status(200).json({ token, name: user.name });
+    res.status(200).json({ message: 'Signin successful', token, name: user.name });
   } catch (err) {
     res.status(500).json({ message: 'Server error' });
   }
+  console.log('Signin request received for:', email);
+
 };
 
-// Get user info (protected)
+// Get user info with progress
 exports.getUser = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).select('-password');
+    const user = await User.findById(req.user.id)
+      .populate('likedBooks favouriteBooks activityLog.book', 'title imageLinks')
+      .select('-password');
+
     if (!user) return res.status(404).json({ message: 'User not found' });
 
     res.status(200).json(user);
