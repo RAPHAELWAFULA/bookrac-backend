@@ -2,9 +2,10 @@ const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
-// Signup
+// SIGNUP
 exports.signup = async (req, res) => {
   const { name, email, password } = req.body;
+
   try {
     const existing = await User.findOne({ email });
     if (existing) return res.status(400).json({ message: 'Email already exists' });
@@ -16,13 +17,15 @@ exports.signup = async (req, res) => {
 
     res.status(201).json({ message: 'User created successfully', token });
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: 'Server error' });
   }
 };
 
-// Signin
+// SIGNIN
 exports.signin = async (req, res) => {
   const { email, password } = req.body;
+
   try {
     const user = await User.findOne({ email });
     if (!user) return res.status(400).json({ message: 'Invalid credentials' });
@@ -34,13 +37,12 @@ exports.signin = async (req, res) => {
 
     res.status(200).json({ message: 'Signin successful', token, name: user.name });
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: 'Server error' });
   }
-  console.log('Signin request received for:', email);
-
 };
 
-// Get user info with progress
+// GET USER
 exports.getUser = async (req, res) => {
   try {
     const user = await User.findById(req.user.id)
@@ -51,6 +53,7 @@ exports.getUser = async (req, res) => {
 
     res.status(200).json(user);
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: 'Server error' });
   }
 };
