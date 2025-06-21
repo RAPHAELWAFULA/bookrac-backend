@@ -4,8 +4,8 @@ const { signup, signin, getUser } = require('../controllers/authController');
 const verifyToken = require('../middleware/verifyToken');
 
 // Public
-router.post('/signup', signup);
-router.post('/signin', signin);
+router.post('/signin', authController.signin);
+router.post('/signup', authController.signup);
 
 // Protected
 router.get('/user', verifyToken, getUser);

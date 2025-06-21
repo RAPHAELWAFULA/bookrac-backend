@@ -18,12 +18,11 @@ app.use('/api/auth', authRoutes); // /signup, /signin, /user
 app.use('/api/user', userActions); // for actions on books
 
 // Connect to MongoDB
-mongoose.connect(process.env.MONGO_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
-.then(() => {
-  const PORT = process.env.PORT || 5000;
-  app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
-})
-.catch((err) => console.error('❌ MongoDB connection error:', err));
+const MONGO_URI = process.env.MONGO_URI;
+
+mongoose.connect(MONGO_URI)
+  .then(() => {
+    const PORT = process.env.PORT || 5000;
+    app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
+  })
+  .catch((err) => console.error('❌ MongoDB connection error:', err));
