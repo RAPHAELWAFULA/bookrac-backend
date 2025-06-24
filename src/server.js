@@ -13,6 +13,11 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Root route
+app.get('/', (req, res) => {
+  res.send('📚 Bookrac Backend is running!');
+});
+
 // Routes
 app.use('/api/auth', authRoutes); // /signup, /signin, /user
 app.use('/api/user', userActions); // for actions on books
