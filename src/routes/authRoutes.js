@@ -12,4 +12,6 @@ router.get('/user', verifyToken, authController.getUser);
 router.post('/like', verifyToken, authController.likeBook);
 router.get('user/favourites', verifyToken, authController.getFavourites);
 
+router.get('/user/favourites', verifyToken, authController.getFavourites);
+
 module.exports = router;
