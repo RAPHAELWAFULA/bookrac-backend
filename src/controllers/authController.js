@@ -58,9 +58,6 @@ exports.getUser = async (req, res) => {
 // LIKE BOOK
 exports.likeBook = async (req, res) => {
   try {
-    console.log('📌 TOKEN PAYLOAD:', req.user);
-    console.log('📚 RAW BOOK DATA:', req.body);
-
     const { bookId, title, authors, description, thumbnail } = req.body;
 
     if (!bookId || !title) {
@@ -75,33 +72,43 @@ exports.likeBook = async (req, res) => {
       thumbnail,
     };
 
-    console.log('✅ CLEANED BOOK DATA:', bookData);
-
     const user = await User.findById(req.user.id);
     if (!user) return res.status(404).json({ message: 'User not found' });
 
     const alreadyLiked = user.likedBooks.some(b => b.bookId === bookId);
-    console.log('🔍 Already liked?', alreadyLiked);
 
     if (!alreadyLiked) {
       user.likedBooks.push(bookData);
       user.favouriteBooks.push(bookData);
       user.activityLog.push({ action: 'Liked and added', bookId, title });
+
       user.likedBooks = Array.from(
         new Map(user.likedBooks.map(book => [book.bookId, book])).values()
       );
-    
-      // Ensure uniqueness in favouriteBooks
+
       user.favouriteBooks = Array.from(
         new Map(user.favouriteBooks.map(book => [book.bookId, book])).values()
       );
+
       await user.save();
-      console.log('✅ Book saved');
     }
 
     return res.status(200).json({ message: 'Liked!' });
   } catch (err) {
     console.error('🔥 LIKE CONTROLLER ERROR:', err);
     return res.status(500).json({ message: err.message });
+  }
+};
+
+// 🔥 NEW: GET FAVOURITE BOOKS
+exports.getFavourites = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    res.status(200).json(user.favouriteBooks || []);
+  } catch (err) {
+    console.error('❌ Failed to fetch favourites:', err);
+    res.status(500).json({ message: 'Server error while fetching favourites' });
   }
 };
