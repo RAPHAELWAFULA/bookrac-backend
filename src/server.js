@@ -4,7 +4,6 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 
 const authRoutes = require('./routes/authRoutes');
-const userActions = require('./routes/userActions');
 
 dotenv.config();
 const app = express();
@@ -19,8 +18,7 @@ app.get('/', (req, res) => {
 });
 
 // Routes
-app.use('/api/auth', authRoutes); // /signup, /signin, /user
-app.use('/api/user', userActions); // for actions on books
+app.use('/api/auth', authRoutes); // Signup, Signin, User Info, Like Book
 
 // Connect to MongoDB
 const MONGO_URI = process.env.MONGO_URI;

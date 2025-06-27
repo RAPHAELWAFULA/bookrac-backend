@@ -28,32 +28,80 @@ exports.signin = async (req, res) => {
 
   try {
     const user = await User.findOne({ email });
-    if (!user) return res.status(400).json({ message: 'Invalid credentials' });
+    if (!user) return res.status(404).json({ message: 'User not found' });
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(400).json({ message: 'Invalid credentials' });
 
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
-    res.status(200).json({ message: 'Signin successful', token, name: user.name });
+    res.status(200).json({ message: 'Login successful', token, user });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error' });
   }
 };
 
-// GET USER
+// GET USER INFO
 exports.getUser = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id)
-      .populate('likedBooks favouriteBooks activityLog.book', 'title imageLinks')
-      .select('-password');
-
+    const user = await User.findById(req.user.id).select('-password');
     if (!user) return res.status(404).json({ message: 'User not found' });
 
     res.status(200).json(user);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Error fetching user info' });
+  }
+};
+
+// LIKE BOOK
+exports.likeBook = async (req, res) => {
+  try {
+    console.log('📌 TOKEN PAYLOAD:', req.user);
+    console.log('📚 RAW BOOK DATA:', req.body);
+
+    const { bookId, title, authors, description, thumbnail } = req.body;
+
+    if (!bookId || !title) {
+      return res.status(400).json({ message: 'Missing required book fields' });
+    }
+
+    const bookData = {
+      bookId,
+      title,
+      authors,
+      description,
+      thumbnail,
+    };
+
+    console.log('✅ CLEANED BOOK DATA:', bookData);
+
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    const alreadyLiked = user.likedBooks.some(b => b.bookId === bookId);
+    console.log('🔍 Already liked?', alreadyLiked);
+
+    if (!alreadyLiked) {
+      user.likedBooks.push(bookData);
+      user.favouriteBooks.push(bookData);
+      user.activityLog.push({ action: 'Liked and added', bookId, title });
+      user.likedBooks = Array.from(
+        new Map(user.likedBooks.map(book => [book.bookId, book])).values()
+      );
+    
+      // Ensure uniqueness in favouriteBooks
+      user.favouriteBooks = Array.from(
+        new Map(user.favouriteBooks.map(book => [book.bookId, book])).values()
+      );
+      await user.save();
+      console.log('✅ Book saved');
+    }
+
+    return res.status(200).json({ message: 'Liked!' });
+  } catch (err) {
+    console.error('🔥 LIKE CONTROLLER ERROR:', err);
+    return res.status(500).json({ message: err.message });
   }
 };

@@ -1,13 +1,14 @@
 const express = require('express');
 const router = express.Router();
-const authController = require('../controllers/authController'); // ✅ You forgot this line
+const authController = require('../controllers/authController');
 const verifyToken = require('../middleware/verifyToken');
 
-// Public
-router.post('/signin', authController.signin);
+// Public Routes
 router.post('/signup', authController.signup);
+router.post('/signin', authController.signin);
 
-// Protected
+// Protected Routes
 router.get('/user', verifyToken, authController.getUser);
+router.post('/like', verifyToken, authController.likeBook);
 
 module.exports = router;

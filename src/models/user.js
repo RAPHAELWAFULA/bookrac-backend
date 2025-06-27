@@ -1,22 +1,32 @@
 const mongoose = require('mongoose');
 
+// Embedded book schema
+const BookSchema = new mongoose.Schema({
+  bookId: String,
+  title: String,
+  authors: [String],
+  thumbnail: String,
+  description: String,
+  // add more fields if needed
+}, { _id: false }); // prevent nested _id
+
 const userSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  email: { type: String, required: true, unique: true },
-  password: { type: String, required: true },
-  likedBooks: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Book' }],
-  favouriteBooks: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Book' }],
+  name: String,
+  email: { type: String, unique: true },
+  password: String,
+  likedBooks: [BookSchema],        // ✅ Embedded book objects
+  favouriteBooks: [BookSchema],    // ✅ Embedded book objects
   activityLog: [
     {
-      action: {
-        type: String,
-        enum: ['added', 'removed', 'liked', 'unliked', 'favourited', 'unfavourited'],
+      action: String,
+      bookId: String,
+      title: String,
+      date: {
+        type: Date,
+        default: Date.now,
       },
-      book: { type: mongoose.Schema.Types.ObjectId, ref: 'Book' },
-      timestamp: { type: Date, default: Date.now },
-    },
+    }
   ],
 });
 
-// ✅ Safe export to avoid OverwriteModelError
 module.exports = mongoose.models.User || mongoose.model('User', userSchema);

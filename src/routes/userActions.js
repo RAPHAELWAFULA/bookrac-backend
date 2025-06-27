@@ -6,13 +6,16 @@ const User = require('../models/user');
 // Save liked book
 router.post('/like', verifyToken, async (req, res) => {
   const { bookId, title, authors, thumbnail } = req.body;
+
   try {
     const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
 
-    const bookData = { _id: bookId, title, authors, thumbnail };
+    const bookData = { bookId, title, authors, thumbnail };
 
-    // Prevent duplicates
-    const exists = user.likedBooks.some(b => b._id === bookId);
+    // Check if the book is already liked
+    const exists = user.likedBooks.some(b => b.bookId === bookId);
+
     if (!exists) {
       user.likedBooks.push(bookData);
       user.favouriteBooks.push(bookData);
@@ -22,6 +25,7 @@ router.post('/like', verifyToken, async (req, res) => {
     await user.save();
     res.status(200).json({ message: 'Book liked and saved.' });
   } catch (err) {
+    console.error('Like Error:', err);
     res.status(500).json({ message: 'Error liking book', error: err.message });
   }
 });
@@ -30,8 +34,11 @@ router.post('/like', verifyToken, async (req, res) => {
 router.get('/favourites', verifyToken, async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
     res.status(200).json(user.favouriteBooks);
   } catch (err) {
+    console.error('Favourites Error:', err);
     res.status(500).json({ message: 'Error fetching favourites', error: err.message });
   }
 });

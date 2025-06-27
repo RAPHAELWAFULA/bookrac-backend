@@ -1,68 +1,52 @@
+// routes/userAction.js
+const express = require('express');
+const router = express.Router();
+const verifyToken = require('../middleware/verifyToken');
 const User = require('../models/user');
-const Book = require('../models/Book');
 
-// Helper to log activity
-const logActivity = async (userId, bookId, action) => {
-  await User.findByIdAndUpdate(userId, {
-    $push: {
-      activityLog: { action, book: bookId },
-    },
-  });
-};
-
-// Like a book
-exports.likeBook = async (req, res) => {
-  const { bookId } = req.body;
-  const userId = req.user.id;
+router.post('/like', verifyToken, async (req, res) => {
+  const { bookId, title, authors, description, thumbnail } = req.body;
 
   try {
-    await User.findByIdAndUpdate(userId, {
-      $addToSet: { likedBooks: bookId },
-    });
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
 
-    await logActivity(userId, bookId, 'liked');
+    const bookData = {
+      bookId,
+      title,
+      authors,
+      description,
+      thumbnail
+    };
 
-    res.status(200).json({ message: 'Book liked' });
+    if (!user.likedBooks.some(b => b.bookId === bookId)) {
+      user.likedBooks.push(bookData);
+      user.favouriteBooks.push(bookData);
+      user.activityLog.push({
+        action: 'liked',
+        bookId,
+        title,
+        timestamp: new Date()
+      });
+    }
+
+    await user.save();
+    res.status(200).json({ message: 'Book liked and saved.' });
   } catch (err) {
-    res.status(500).json({ message: 'Server error' });
+    console.error('Like Error:', err);
+    res.status(500).json({ message: 'Error liking book', error: err.message });
   }
-};
+});
 
-// Add to favourites
-exports.favouriteBook = async (req, res) => {
-  const { bookId } = req.body;
-  const userId = req.user.id;
-
+router.get('/favourites', verifyToken, async (req, res) => {
   try {
-    await User.findByIdAndUpdate(userId, {
-      $addToSet: { favouriteBooks: bookId },
-    });
-
-    await logActivity(userId, bookId, 'favourited');
-
-    res.status(200).json({ message: 'Book added to favourites' });
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    res.status(200).json(user.favouriteBooks);
   } catch (err) {
-    res.status(500).json({ message: 'Server error' });
+    console.error('Favourites Error:', err);
+    res.status(500).json({ message: 'Error fetching favourites', error: err.message });
   }
-};
+});
 
-// Remove a book
-exports.removeBook = async (req, res) => {
-  const { bookId } = req.body;
-  const userId = req.user.id;
-
-  try {
-    await User.findByIdAndUpdate(userId, {
-      $pull: {
-        likedBooks: bookId,
-        favouriteBooks: bookId,
-      },
-    });
-
-    await logActivity(userId, bookId, 'removed');
-
-    res.status(200).json({ message: 'Book removed from lists' });
-  } catch (err) {
-    res.status(500).json({ message: 'Server error' });
-  }
-};
+module.exports = router;
